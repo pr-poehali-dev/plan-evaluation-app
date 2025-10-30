@@ -1,82 +1,15 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import Icon from '@/components/ui/icon';
 import { useToast } from '@/hooks/use-toast';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts';
-
-interface Employee {
-  id: string;
-  name: string;
-  plan: number;
-  fact: number;
-  percentage: number;
-  rating: number;
-  additionalMetrics: AdditionalMetric[];
-  perishableProducts: ProductTable[];
-  urgentSales: ProductTable[];
-}
-
-interface AdditionalMetric {
-  id: string;
-  name: string;
-  plan: number;
-  fact: number;
-  percentage: number;
-}
-
-interface ProductTable {
-  id: string;
-  tableName: string;
-  items: ProductItem[];
-  totalPercentage: number;
-}
-
-interface ProductItem {
-  id: string;
-  name: string;
-  plan: number;
-  fact: number;
-  percentage: number;
-}
-
-const calculatePercentage = (fact: number, plan: number): number => {
-  if (plan === 0) return 0;
-  return (fact / plan) * 100;
-};
-
-const calculateRating = (percentage: number): number => {
-  if (percentage <= 10) return 0;
-  if (percentage <= 35) return 1;
-  if (percentage <= 50) return 2;
-  if (percentage <= 65) return 3;
-  if (percentage <= 79) return 4;
-  return 5;
-};
-
-const getRatingColor = (rating: number): string => {
-  const colors = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e'];
-  return colors[rating] || '#6b7280';
-};
+import { Employee } from '@/types/employee';
+import { calculatePercentage, calculateRating, getRatingColor } from '@/utils/calculations';
+import StatsCards from '@/components/dashboard/StatsCards';
+import OverviewCharts from '@/components/dashboard/OverviewCharts';
+import EmployeeCard from '@/components/dashboard/EmployeeCard';
+import AnalyticsTable from '@/components/dashboard/AnalyticsTable';
+import AddEmployeeForm from '@/components/dashboard/AddEmployeeForm';
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -150,7 +83,6 @@ const Dashboard = () => {
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newPlan, setNewPlan] = useState('');
   const [newFact, setNewFact] = useState('');
-  const [additionalPercentageDistribution, setAdditionalPercentageDistribution] = useState(1);
 
   const addEmployee = () => {
     if (!newEmployeeName || !newPlan || !newFact) {
@@ -232,47 +164,7 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-blue-500 hover-scale">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <Icon name="Target" size={16} />
-                Общий план
-              </CardDescription>
-              <CardTitle className="text-3xl">{stats.totalPlan.toLocaleString()} ₽</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-l-4 border-l-green-500 hover-scale">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <Icon name="TrendingUp" size={16} />
-                Выполнено
-              </CardDescription>
-              <CardTitle className="text-3xl">{stats.totalFact.toLocaleString()} ₽</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-l-4 border-l-purple-500 hover-scale">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <Icon name="Percent" size={16} />
-                Средний процент
-              </CardDescription>
-              <CardTitle className="text-3xl">{stats.avgPercentage.toFixed(1)}%</CardTitle>
-            </CardHeader>
-          </Card>
-
-          <Card className="border-l-4 border-l-orange-500 hover-scale">
-            <CardHeader className="pb-3">
-              <CardDescription className="flex items-center gap-2">
-                <Icon name="Star" size={16} />
-                Средняя оценка
-              </CardDescription>
-              <CardTitle className="text-3xl">{stats.avgRating.toFixed(1)} / 5</CardTitle>
-            </CardHeader>
-          </Card>
-        </div>
+        <StatsCards stats={stats} />
 
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto">
@@ -294,293 +186,32 @@ const Dashboard = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="animate-fade-in">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Icon name="BarChart" size={20} />
-                    План vs Факт
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="name" stroke="#64748b" />
-                      <YAxis stroke="#64748b" />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#fff', 
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px'
-                        }} 
-                      />
-                      <Legend />
-                      <Bar dataKey="план" fill="#0EA5E9" radius={[8, 8, 0, 0]} />
-                      <Bar dataKey="факт" fill="#22c55e" radius={[8, 8, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card className="animate-fade-in">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Icon name="PieChart" size={20} />
-                    Распределение оценок
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie
-                        data={ratingDistribution}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''}
-                        outerRadius={100}
-                        fill="#8884d8"
-                        dataKey="value"
-                      >
-                        {ratingDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="animate-fade-in">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="TrendingUp" size={20} />
-                  Динамика выполнения плана
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis dataKey="name" stroke="#64748b" />
-                    <YAxis stroke="#64748b" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px'
-                      }} 
-                    />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="процент" 
-                      stroke="#9b87f5" 
-                      strokeWidth={3}
-                      dot={{ fill: '#9b87f5', r: 6 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+          <TabsContent value="overview">
+            <OverviewCharts chartData={chartData} ratingDistribution={ratingDistribution} />
           </TabsContent>
 
           <TabsContent value="employees" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {employees.map((employee) => (
-                <Card key={employee.id} className="hover-scale animate-fade-in">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-xl mb-1">{employee.name}</CardTitle>
-                        <CardDescription>ID: {employee.id}</CardDescription>
-                      </div>
-                      <Badge 
-                        className="text-lg px-3 py-1"
-                        style={{ 
-                          backgroundColor: getRatingColor(employee.rating),
-                          color: 'white'
-                        }}
-                      >
-                        {employee.rating}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">План:</span>
-                        <span className="font-semibold">{employee.plan.toLocaleString()} ₽</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Факт:</span>
-                        <span className="font-semibold">{employee.fact.toLocaleString()} ₽</span>
-                      </div>
-                      <Progress value={employee.percentage} className="h-2" />
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Выполнение:</span>
-                        <span className="font-bold text-lg" style={{ color: getRatingColor(employee.rating) }}>
-                          {employee.percentage.toFixed(1)}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {employee.additionalMetrics.length > 0 && (
-                      <div className="pt-4 border-t space-y-2">
-                        <p className="text-sm font-semibold text-slate-700">Доп. метрики:</p>
-                        {employee.additionalMetrics.map(metric => (
-                          <div key={metric.id} className="text-xs text-slate-600">
-                            {metric.name}: {metric.percentage.toFixed(1)}%
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1 gap-2">
-                        <Icon name="Edit" size={14} />
-                        Изменить
-                      </Button>
-                      <Button variant="outline" size="sm" className="flex-1 gap-2">
-                        <Icon name="FileText" size={14} />
-                        Детали
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EmployeeCard key={employee.id} employee={employee} />
               ))}
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Подробная аналитика</CardTitle>
-                <CardDescription>Полная статистика по всем сотрудникам</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <table className="w-full">
-                    <thead className="bg-slate-50">
-                      <tr>
-                        <th className="text-left p-4 font-semibold">Сотрудник</th>
-                        <th className="text-right p-4 font-semibold">План</th>
-                        <th className="text-right p-4 font-semibold">Факт</th>
-                        <th className="text-right p-4 font-semibold">%</th>
-                        <th className="text-center p-4 font-semibold">Оценка</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {employees.map((emp, idx) => (
-                        <tr key={emp.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                          <td className="p-4 font-medium">{emp.name}</td>
-                          <td className="p-4 text-right">{emp.plan.toLocaleString()} ₽</td>
-                          <td className="p-4 text-right">{emp.fact.toLocaleString()} ₽</td>
-                          <td className="p-4 text-right font-semibold">{emp.percentage.toFixed(1)}%</td>
-                          <td className="p-4 text-center">
-                            <Badge 
-                              style={{ 
-                                backgroundColor: getRatingColor(emp.rating),
-                                color: 'white'
-                              }}
-                            >
-                              {emp.rating}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="analytics">
+            <AnalyticsTable employees={employees} />
           </TabsContent>
 
-          <TabsContent value="add" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Icon name="UserPlus" size={20} />
-                  Добавить сотрудника
-                </CardTitle>
-                <CardDescription>Введите данные для расчета оценки</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">ФИО сотрудника</Label>
-                    <Input
-                      id="name"
-                      placeholder="Иванов Иван"
-                      value={newEmployeeName}
-                      onChange={(e) => setNewEmployeeName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="plan">План (₽)</Label>
-                    <Input
-                      id="plan"
-                      type="number"
-                      placeholder="80000"
-                      value={newPlan}
-                      onChange={(e) => setNewPlan(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fact">Факт (₽)</Label>
-                    <Input
-                      id="fact"
-                      type="number"
-                      placeholder="72000"
-                      value={newFact}
-                      onChange={(e) => setNewFact(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <Button onClick={addEmployee} size="lg" className="w-full gap-2">
-                  <Icon name="Plus" size={20} />
-                  Добавить сотрудника
-                </Button>
-
-                <div className="mt-8 p-6 bg-slate-50 rounded-lg border">
-                  <h3 className="font-semibold mb-4 flex items-center gap-2">
-                    <Icon name="Info" size={18} />
-                    Шкала оценки
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: getRatingColor(0), color: 'white' }}>0</Badge>
-                      <span>0–10% выполнения</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: getRatingColor(1), color: 'white' }}>1</Badge>
-                      <span>11–35% выполнения</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: getRatingColor(2), color: 'white' }}>2</Badge>
-                      <span>36–50% выполнения</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: getRatingColor(3), color: 'white' }}>3</Badge>
-                      <span>51–65% выполнения</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: getRatingColor(4), color: 'white' }}>4</Badge>
-                      <span>66–79% выполнения</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge style={{ backgroundColor: getRatingColor(5), color: 'white' }}>5</Badge>
-                      <span>80–100% выполнения</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="add">
+            <AddEmployeeForm
+              newEmployeeName={newEmployeeName}
+              setNewEmployeeName={setNewEmployeeName}
+              newPlan={newPlan}
+              setNewPlan={setNewPlan}
+              newFact={newFact}
+              setNewFact={setNewFact}
+              onAddEmployee={addEmployee}
+            />
           </TabsContent>
         </Tabs>
       </div>
