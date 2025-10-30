@@ -10,6 +10,7 @@ import OverviewCharts from '@/components/dashboard/OverviewCharts';
 import EmployeeCard from '@/components/dashboard/EmployeeCard';
 import AnalyticsTable from '@/components/dashboard/AnalyticsTable';
 import AddEmployeeForm from '@/components/dashboard/AddEmployeeForm';
+import EmployeeDetailsDialog from '@/components/dashboard/EmployeeDetailsDialog';
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -83,6 +84,13 @@ const Dashboard = () => {
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newPlan, setNewPlan] = useState('');
   const [newFact, setNewFact] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+
+  const handleViewDetails = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setDetailsDialogOpen(true);
+  };
 
   const addEmployee = () => {
     if (!newEmployeeName || !newPlan || !newFact) {
@@ -193,7 +201,11 @@ const Dashboard = () => {
           <TabsContent value="employees" className="space-y-4">
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {employees.map((employee) => (
-                <EmployeeCard key={employee.id} employee={employee} />
+                <EmployeeCard 
+                  key={employee.id} 
+                  employee={employee} 
+                  onViewDetails={handleViewDetails}
+                />
               ))}
             </div>
           </TabsContent>
@@ -214,6 +226,12 @@ const Dashboard = () => {
             />
           </TabsContent>
         </Tabs>
+
+        <EmployeeDetailsDialog
+          employee={selectedEmployee}
+          open={detailsDialogOpen}
+          onOpenChange={setDetailsDialogOpen}
+        />
       </div>
     </div>
   );

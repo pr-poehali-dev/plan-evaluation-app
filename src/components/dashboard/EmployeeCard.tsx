@@ -8,9 +8,10 @@ import { getRatingColor } from '@/utils/calculations';
 
 interface EmployeeCardProps {
   employee: Employee;
+  onViewDetails: (employee: Employee) => void;
 }
 
-const EmployeeCard = ({ employee }: EmployeeCardProps) => {
+const EmployeeCard = ({ employee, onViewDetails }: EmployeeCardProps) => {
   return (
     <Card className="hover-scale animate-fade-in">
       <CardHeader>
@@ -65,7 +66,12 @@ const EmployeeCard = ({ employee }: EmployeeCardProps) => {
             <Icon name="Edit" size={14} />
             Изменить
           </Button>
-          <Button variant="outline" size="sm" className="flex-1 gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="flex-1 gap-2"
+            onClick={() => onViewDetails(employee)}
+          >
             <Icon name="FileText" size={14} />
             Детали
           </Button>
